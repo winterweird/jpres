@@ -15,6 +15,9 @@ files. In particular, it assumes that `{` and `}` both occur on the end of
 lines. If this is not the case across all lines of your source code, this script
 results in undefined behavior.
 
+This script has been tested with Python 2.7.12 and Python 3.5.2, and should
+probably work with any version of Python 2.x/3.x
+
 ### DESCRIPTION:
 
 Specify preconditions before a Java method or constructor to automatically
