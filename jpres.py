@@ -98,10 +98,10 @@ if __name__ == '__main__':
                         rstres = res.rstrip()
                         if rstres.endswith("{"):
                             # assuming that { comes at the end of the line
-                            nOpen = len(openbrace.findall(rstres, re.MULTILINE));
-                            nClose = len(closebrace.findall(rstres, re.MULTILINE));
-                            ilevel = nOpen - nClose
                             if pres:
+                                nOpen = len(openbrace.findall(rstres, re.MULTILINE));
+                                nClose = len(closebrace.findall(rstres, re.MULTILINE));
+                                ilevel = nOpen - nClose
                                 for presLine in pres.split('\n'):
                                     res += ' '*ilevel*4 + presLine + "\n"
                             pres = "" # reset pres
