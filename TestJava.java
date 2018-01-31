@@ -13,4 +13,9 @@ public class TestJava {
             e.printStackTrace();
         }
     }
+
+    // presume: x >= 0
+    public int test(int x) {
+        return x*x;
+    }
 }

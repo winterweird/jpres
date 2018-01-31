@@ -2,10 +2,16 @@
 
 # jpres.py
 
+
+import sys, re
+
+EXCEPTION_NAME = "IllegalArgumentException"
+PRECONDITION_CODE = "presume"
+
 helpStr = """
 DESCRIPTION:
 Specify preconditions before a Java method or constructor to automatically
-generate IllegalArgumentExceptions.
+generate %ss.
 
 USAGE:
 python jpres.py [-h|-i] [args]
@@ -14,14 +20,14 @@ OPTIONS:
     -h: Displays the help message
     -i: Insert mode; modify the files specified in the arguments by
         replacing the preconditions specified in metasyntax with
-        IllegalArgumentException throw statements
+        %s throw statements
 
 METASYNTAX COMPOSITION:
-^\s*//\s*presume\s*:\s*.+?(?:$|\s*;\s*.+\s*$)
+^\s*//\s*%s\s*:\s*.+?(?:$|\s*;\s*.+\s*$)
 
 EXAMPLES:
 
-// presume: d >= 0
+// %s: d >= 0
 public static double sqrt(double d) {
     return Math.sqrt(d);
 }
@@ -29,14 +35,14 @@ public static double sqrt(double d) {
 The above translates to:
 public static double sqrt(double d) {
     if (!(d >= 0)) {
-        throw new IllegalArgumentException("d < 0");
+        throw new %s("d < 0");
     }
     return Math.sqrt(d);
 }
 
 An optional description clause can be specified using the syntax
 "; <description>". Example:
-// presume: d >= 0 ; you cannot take the square root of negative numbers
+// %s: d >= 0 ; you cannot take the square root of negative numbers
 public static double sqrt(double d) {
     return Math.sqrt(d);
 }
@@ -44,7 +50,7 @@ public static double sqrt(double d) {
 This translates to:
 public static double sqrt(double d) {
     if (!(d >= 0)) {
-        throw new IllegalArgumentException("you cannot take the square root of negative numbers");
+        throw new %s("you cannot take the square root of negative numbers");
     }
     return Math.sqrt(d);
 }
@@ -53,21 +59,20 @@ Any number of leading, trailing or intermittent whitespace is allowed. In the
 result, all intermittent whitespace will be normalized to a single space,
 trailing whitespace will be dropped, and the output will have the correct level
 of indentation.
-"""
-
-import sys, re
-
-EXCEPTION_NAME = "IllegalArgumentException"
+""" %(EXCEPTION_NAME, EXCEPTION_NAME, PRECONDITION_CODE, PRECONDITION_CODE,\
+        EXCEPTION_NAME, PRECONDITION_CODE, EXCEPTION_NAME)
 
 if __name__ == '__main__':
     if len(sys.argv) == 1 or '-h' in sys.argv:
         print(helpStr)
     else:
         anyspace = re.compile(r"\s+")
-        valid = re.compile(r"^//\s?presume\s?:\s?.+?(?:$|;\s?.+$)")
+        valid = re.compile(r"^//\s?%s\s?:\s?.+?(?:$|;\s?.+$)" %PRECONDITION_CODE)
         content = re.compile(r":\s?(.+?)\s?(?:$|;\s?)(.*$)")
         backslash = re.compile(r"\\")
         quotation = re.compile(r'"')
+        openbrace = re.compile(r"{")
+        closebrace = re.compile(r"}")
         for i in range(1, len(sys.argv)):
             if sys.argv[i].startswith('-'):
                 continue # ignore
@@ -78,7 +83,6 @@ if __name__ == '__main__':
                 for line in f:
                     l = anyspace.sub(" ", line.strip());
                     if (valid.match(l)):
-                        # TODO: do the thing
                         c = content.findall(l)
                         if len(c) != 1 or len(c[0]) != 2:
                             sys.stderr.write("Error: metasyntax error for line " + "'" + line + "'")
@@ -94,14 +98,15 @@ if __name__ == '__main__':
                         rstres = res.rstrip()
                         if rstres.endswith("{"):
                             # assuming that { comes at the end of the line
-                            ilevel += 1
+                            nOpen = len(openbrace.findall(rstres, re.MULTILINE));
+                            nClose = len(closebrace.findall(rstres, re.MULTILINE));
+                            ilevel = nOpen - nClose
                             if pres:
                                 for presLine in pres.split('\n'):
                                     res += ' '*ilevel*4 + presLine + "\n"
                             pres = "" # reset pres
                         elif rstres.endswith("}"):
                             # assuming that } comes at the end of the line
-                            ilevel -= 1
                             pres = "" # reset pres
             if ('-i' in sys.argv):
                 with open(sys.argv[i], "w") as f:
